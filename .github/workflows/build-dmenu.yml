@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch: {} # Added for manual triggering
 
 jobs:
   build:
@@ -15,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools musl-dev libx11-dev libxinerama-dev libxft-dev
+          sudo apt-get install -y musl-tools musl-dev libx11-dev libxinerama-dev libxft-dev libfreetype-dev
 
       - name: Download dmenu source
         run: |
@@ -27,8 +28,8 @@ jobs:
         run: |
           cd dmenu-5.3
           sed -i 's/CC = cc/CC = musl-gcc/' config.mk
-          sed -i 's/CFLAGS =/CFLAGS = -static/' config.mk
-          sed -i 's/LDFLAGS =/LDFLAGS = -static/' config.mk
+          sed -i 's|CFLAGS =|CFLAGS = -static -I/usr/include/X11 -I/usr/include/freetype2|' config.mk
+          sed -i 's|LDFLAGS =|LDFLAGS = -static -L/usr/lib/x86_64-linux-gnu|' config.mk
           make clean
           make
           mv dmenu ../dmenu-static-x86_64
@@ -53,10 +54,10 @@ jobs:
               {
                 "pkg": "dmenu",
                 "pkg_name": "dmenu",
-                "pkg_id": "github.com/yourusername.dbin-dmenu",
+                "pkg_id": "github.com/danrobi11.dbin-dmenu",
                 "description": "Dynamic menu for X11, designed for dwm",
                 "version": "5.3",
-                "download_url": "https://github.com/yourusername/dbin-dmenu/releases/download/\${{ github.ref_name }}/dmenu-static-x86_64",
+                "download_url": "https://github.com/danrobi11/dbin-dmenu/releases/download/\${{ github.ref_name }}/dmenu-static-x86_64",
                 "size": "0.1 MB",
                 "bsum": "\$B3SUM",
                 "shasum": "\$SHA256",
