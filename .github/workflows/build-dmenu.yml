@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools musl-dev libx11-dev libxinerama-dev libxft-dev libfreetype-dev
+          sudo apt-get install -y musl-tools musl-dev libx11-dev libxinerama-dev libxft-dev libfreetype-dev pkg-config
 
       - name: Download dmenu source
         run: |
@@ -28,87 +28,7 @@ jobs:
         run: |
           cd dmenu-5.3
           sed -i 's/CC = cc/CC = musl-gcc/' config.mk
-          sed -i 's|CFLAGS =|CFLAGS = -static -I/usr/include/X11 -I/usr/include/freetype2|' config.mk
-          sed -i 's|LDFLAGS =|LDFLAGS = -static -L/usr/lib/x86_64-linux-gnu|' config.mk
-          make clean
-          make
-          mv dmenu ../dmenu-static-x86_64
-          cd ..
-
-      - name: Verify static linking
-        run: |
-          ldd dmenu-static-x86_64 || echo "Static binary confirmed"
-
-      - name: Calculate checksums
-        run: |
-          b3sum dmenu-static-x86_64 > dmenu-static-x86_64.b3sum
-          sha256sum dmenu-static-x86_64 > dmenu-static-x86_64.sha256
-
-      - name: Generate dbin JSON index
-        run: |
-          B3SUM=$(cat dmenu-static-x86_64.b3sum | cut -d' ' -f1)
-          SHA256=$(cat dmenu-static-x86_64.sha256 | cut -d' ' -f1)
-          cat << EOF > dmenu.json
-          {
-            "DmenuRepo": [
-              {
-                "pkg": "dmenu",
-                "pkg_name": "dmenu",
-                "pkg_id": "github.com/danrobi11.dbin-dmenu",
-                "description": "Dynamic menu for X11, designed for dwm",
-                "version": "5.3",
-                "download_url": "https://github.com/danrobi11/dbin-dmenu/releases/download/\${{ github.ref_name }}/dmenu-static-x86_64",
-                "size": "0.1 MB",
-                "bsum": "\$B3SUM",
-                "shasum": "\$SHA256",
-                "build_date": "\$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-                "src_urls": ["https://dl.suckless.org/tools/dmenu-5.3.tar.gz"],
-                "web_urls": ["https://tools.suckless.org/dmenu/"],
-                "notes": ["Statically linked with Musl for portability"],
-                "rank": 1000
-              }
-            ]
-          }
-          EOF
-
-      - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dmenu-static-x86_64
-            dmenu.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}name: Build and Publish Static dmenu Binary
-
-on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch: {}
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools musl-dev libx11-dev libxinerama-dev libxft-dev libfreetype-dev
-
-      - name: Download dmenu source
-        run: |
-          curl -LO https://dl.suckless.org/tools/dmenu-5.3.tar.gz
-          tar -xzf dmenu-5.3.tar.gz
-          cd dmenu-5.3
-
-      - name: Build static dmenu
-        run: |
-          cd dmenu-5.3
-          sed -i 's/CC = cc/CC = musl-gcc/' config.mk
-          sed -i 's|CFLAGS =|CFLAGS = -static -I/usr/include/X11 -I/usr/include/freetype2|' config.mk
+          sed -i 's|CFLAGS =|CFLAGS = -static -I/usr/include -I/usr/include/X11 -I/usr/include/freetype2|' config.mk
           sed -i 's|LDFLAGS =|LDFLAGS = -static -L/usr/lib/x86_64-linux-gnu|' config.mk
           make clean
           make
