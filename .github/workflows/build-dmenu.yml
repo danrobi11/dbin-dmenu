@@ -78,4 +78,4 @@ jobs:
             dmenu-static-x86_64
             dmenu.json
         env:
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
