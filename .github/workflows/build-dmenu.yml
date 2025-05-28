@@ -2,9 +2,10 @@ name: Build and Publish Static dmenu Binary
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
-      - '.github/workflows/**' # Trigger on workflow changes
+      - '.github/workflows/**'
   push:
     tags:
       - 'v*'
@@ -14,20 +15,23 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
+      - name: Debug environment
+        run: |
+          echo "Workflow started"
+          pwd
+          ls -la
+          env
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y musl-tools musl-dev libx11-dev libxinerama-dev libxft-dev libfreetype-dev pkg-config
-
       - name: Download dmenu source
         run: |
           curl -LO https://dl.suckless.org/tools/dmenu-5.3.tar.gz
           tar -xzf dmenu-5.3.tar.gz
           cd dmenu-5.3
-
       - name: Build static dmenu
         run: |
           cd dmenu-5.3
@@ -38,16 +42,13 @@ jobs:
           make
           mv dmenu ../dmenu-static-x86_64
           cd ..
-
       - name: Verify static linking
         run: |
           ldd dmenu-static-x86_64 || echo "Static binary confirmed"
-
       - name: Calculate checksums
         run: |
           b3sum dmenu-static-x86_64 > dmenu-static-x86_64.b3sum
           sha256sum dmenu-static-x86_64 > dmenu-static-x86_64.sha256
-
       - name: Generate dbin JSON index
         run: |
           B3SUM=$(cat dmenu-static-x86_64.b3sum | cut -d' ' -f1)
@@ -74,7 +75,6 @@ jobs:
             ]
           }
           EOF
-
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
