@@ -2,6 +2,10 @@ name: Build and Publish Static dmenu Binary
 
 on:
   push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**' # Trigger on workflow changes
+  push:
     tags:
       - 'v*'
   workflow_dispatch: {}
