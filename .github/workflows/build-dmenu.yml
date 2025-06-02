@@ -45,9 +45,22 @@ jobs:
           cp dmenu/dmenu artifacts/dmenu
           cp dmenu/dmenu_run artifacts/dmenu_run
           cp dmenu/dmenu_path artifacts/dmenu_path
-          # Modify dmenu_run to use relative paths for dmenu and dmenu_path
-          sed -i 's|dmenu_path|./dmenu_path|' artifacts/dmenu_run
-          sed -i 's|dmenu|./dmenu|' artifacts/dmenu_run
+          # Ensure executable permissions
+          chmod +x artifacts/dmenu artifacts/dmenu_run artifacts/dmenu_path
+          # Patch dmenu_run to use relative paths with precise matching
+          sed -i 's|\bdmenu_path\b|./dmenu_path|g' artifacts/dmenu_run
+          sed -i 's|\bdmenu\b|./dmenu|g' artifacts/dmenu_run
+          # Debug: Output modified dmenu_run content
+          echo "Modified dmenu_run content:"
+          cat artifacts/dmenu_run
+          # Create a fallback wrapper script
+          cat << 'EOF' > artifacts/dmenu_run_wrapper
+          #!/bin/sh
+          DIR=$(dirname "$0")
+          exec "$DIR/dmenu_path" | "$DIR/dmenu" "$@"
+          EOF
+          chmod +x artifacts/dmenu_run_wrapper
+          # Package all files
           tar -czf dmenu-5.3-bin.tar.gz -C artifacts .
 
       - name: Upload artifact
