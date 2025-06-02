@@ -1,0 +1,72 @@
+name: Build dmenu Portable Binary
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libx11-dev \
+            libxinerama-dev \
+            libxft-dev \
+            wget
+
+      - name: Download dmenu source
+        run: |
+          wget https://dl.suckless.org/tools/dmenu-5.3.tar.gz
+          tar -xzf dmenu-5.3.tar.gz
+          mv dmenu-5.3 dmenu
+
+      - name: Build dmenu
+        working-directory: dmenu
+        run: |
+          make clean
+          make
+
+      - name: Package binary
+        run: |
+          mkdir -p artifacts
+          cp dmenu/dmenu artifacts/dmenu
+          cp dmenu/dmenu_run artifacts/dmenu_run
+          cp dmenu/dmenu_path artifacts/dmenu_path
+          # Ensure executable permissions
+          chmod +x artifacts/dmenu artifacts/dmenu_run artifacts/dmenu_path
+          # Patch dmenu_run to use relative paths with precise matching
+          sed -i 's|\bdmenu_path\b|./dmenu_path|g' artifacts/dmenu_run
+          sed -i 's|\bdmenu\b|./dmenu|g' artifacts/dmenu_run
+          # Debug: Output modified dmenu_run content
+          echo "Modified dmenu_run content:"
+          cat artifacts/dmenu_run
+          # Create a fallback wrapper script
+          cat << 'EOF' > artifacts/dmenu_run_wrapper
+          #!/bin/sh
+          DIR=$(dirname "$0")
+          exec "$DIR/dmenu_path" | "$DIR/dmenu" "$@"
+          EOF
+          chmod +x artifacts/dmenu_run_wrapper
+          # Package all files
+          tar -czf dmenu-5.3-bin.tar.gz -C artifacts .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmenu-binary
+          path: dmenu-5.3-bin.tar.gz
+          retention-days: 7
+ 
