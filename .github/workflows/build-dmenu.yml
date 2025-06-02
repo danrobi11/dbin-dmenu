@@ -44,6 +44,10 @@ jobs:
           mkdir -p artifacts
           cp dmenu/dmenu artifacts/dmenu
           cp dmenu/dmenu_run artifacts/dmenu_run
+          cp dmenu/dmenu_path artifacts/dmenu_path
+          # Modify dmenu_run to use relative paths for dmenu and dmenu_path
+          sed -i 's|dmenu_path|./dmenu_path|' artifacts/dmenu_run
+          sed -i 's|dmenu|./dmenu|' artifacts/dmenu_run
           tar -czf dmenu-5.3-bin.tar.gz -C artifacts .
 
       - name: Upload artifact
